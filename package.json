@@ -1,48 +1,28 @@
 {
-  "name": "bells-secp256k1",
-  "version": "0.1.1",
-  "description": "A tiny secp256k1 JS",
-  "homepage": "https://github.com/bitcoinjs/tiny-secp256k1#readme",
-  "bugs": {
-    "url": "https://github.com/bitcoinjs/tiny-secp256k1/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/bitcoinjs/tiny-secp256k1.git"
-  },
-  "license": "MIT",
+  "name": "junk-secp256k1",
+  "version": "0.1.0",
+  "description": "Junkcoin secp256k1 bindings",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [
     "lib"
   ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src_ts/**/*.ts",
+    "format": "prettier --write src_ts/**/*.ts"
+  },
   "dependencies": {
-    "base64-arraybuffer": "1.0.2"
+    "@noble/hashes": "1.3.3"
   },
   "devDependencies": {
-    "@babel/eslint-parser": "^7.22.5",
-    "@babel/plugin-syntax-import-assertions": "^7.22.5",
-    "@types/node": "^14.14.35",
-    "@typescript-eslint/eslint-plugin": "^4.18.0",
-    "@typescript-eslint/parser": "^4.18.0",
-    "browser-run": "^12.0.0",
-    "buffer": "^6.0.3",
-    "eslint": "^7.22.0",
-    "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-prettier": "^3.3.1",
-    "nyc": "^15.1.0",
-    "path-browserify": "^1.0.1",
-    "prettier": "^2.2.1",
-    "process": "^0.11.10",
-    "sort-package-json": "^1.49.0",
-    "stream-browserify": "^3.0.0",
-    "tap-summary": "^4.0.0",
-    "tape": "^5.2.2",
-    "typescript": "^4.2.3",
-    "webpack": "^5.24.4",
-    "webpack-cli": "^4.5.0"
+    "@types/node": "^20.5.9",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "eslint": "^8.0.0",
+    "prettier": "^2.8.0",
+    "typescript": "^4.4.4"
   },
-  "engines": {
-    "node": ">=14.0.0"
-  }
+  "license": "MIT"
 }

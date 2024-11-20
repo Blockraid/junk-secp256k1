@@ -1,65 +1,105 @@
 import { Secp256k1WASM } from "./types.js";
-import * as validate from "./validate.js";
+import {
+  PRIVATE_KEY_SIZE,
+  PUBLIC_KEY_UNCOMPRESSED_SIZE,
+  X_ONLY_PUBLIC_KEY_SIZE,
+  TWEAK_SIZE,
+  SIGNATURE_SIZE,
+  HASH_SIZE,
+  EXTRA_DATA_SIZE,
+} from "./validate.js";
+
+const WASM_MEMORY_PRIVATE_KEY_OFFSET = 0;
+const WASM_MEMORY_PUBLIC_KEY_OFFSET = WASM_MEMORY_PRIVATE_KEY_OFFSET + PRIVATE_KEY_SIZE;
+const WASM_MEMORY_PUBLIC_KEY2_OFFSET = WASM_MEMORY_PUBLIC_KEY_OFFSET + PUBLIC_KEY_UNCOMPRESSED_SIZE;
+const WASM_MEMORY_X_ONLY_PUBLIC_KEY_OFFSET = WASM_MEMORY_PUBLIC_KEY2_OFFSET + PUBLIC_KEY_UNCOMPRESSED_SIZE;
+const WASM_MEMORY_X_ONLY_PUBLIC_KEY2_OFFSET = WASM_MEMORY_X_ONLY_PUBLIC_KEY_OFFSET + X_ONLY_PUBLIC_KEY_SIZE;
+const WASM_MEMORY_TWEAK_OFFSET = WASM_MEMORY_X_ONLY_PUBLIC_KEY2_OFFSET + X_ONLY_PUBLIC_KEY_SIZE;
+const WASM_MEMORY_HASH_OFFSET = WASM_MEMORY_TWEAK_OFFSET + TWEAK_SIZE;
+const WASM_MEMORY_SIGNATURE_OFFSET = WASM_MEMORY_HASH_OFFSET + HASH_SIZE;
+const WASM_MEMORY_EXTRA_DATA_OFFSET = WASM_MEMORY_SIGNATURE_OFFSET + SIGNATURE_SIZE;
+const WASM_MEMORY_LEN = WASM_MEMORY_EXTRA_DATA_OFFSET + EXTRA_DATA_SIZE;
 
 export default class Memory {
-  WASM_BUFFER: Uint8Array;
-  PRIVATE_KEY_INPUT: Uint8Array;
-  PUBLIC_KEY_INPUT: Uint8Array;
-  PUBLIC_KEY_INPUT2: Uint8Array;
-  X_ONLY_PUBLIC_KEY_INPUT: Uint8Array;
-  X_ONLY_PUBLIC_KEY_INPUT2: Uint8Array;
-  TWEAK_INPUT: Uint8Array;
-  HASH_INPUT: Uint8Array;
-  EXTRA_DATA_INPUT: Uint8Array;
-  SIGNATURE_INPUT: Uint8Array;
+  private memory: WebAssembly.Memory;
+  private view: DataView;
+  private u8: Uint8Array;
 
   constructor(wasm: Secp256k1WASM) {
-    this.WASM_BUFFER = new Uint8Array(wasm.memory.buffer);
-    const WASM_PRIVATE_KEY_PTR = wasm.PRIVATE_INPUT.value;
-    const WASM_PUBLIC_KEY_INPUT_PTR = wasm.PUBLIC_KEY_INPUT.value;
-    const WASM_PUBLIC_KEY_INPUT_PTR2 = wasm.PUBLIC_KEY_INPUT2.value;
-    const WASM_X_ONLY_PUBLIC_KEY_INPUT_PTR = wasm.X_ONLY_PUBLIC_KEY_INPUT.value;
-    const WASM_X_ONLY_PUBLIC_KEY_INPUT2_PTR =
-      wasm.X_ONLY_PUBLIC_KEY_INPUT2.value;
-    const WASM_TWEAK_INPUT_PTR = wasm.TWEAK_INPUT.value;
-    const WASM_HASH_INPUT_PTR = wasm.HASH_INPUT.value;
-    const WASM_EXTRA_DATA_INPUT_PTR = wasm.EXTRA_DATA_INPUT.value;
-    const WASM_SIGNATURE_INPUT_PTR = wasm.SIGNATURE_INPUT.value;
-    this.PRIVATE_KEY_INPUT = this.WASM_BUFFER.subarray(
-      WASM_PRIVATE_KEY_PTR,
-      WASM_PRIVATE_KEY_PTR + validate.PRIVATE_KEY_SIZE
+    this.memory = wasm.memory;
+    this.view = new DataView(this.memory.buffer);
+    this.u8 = new Uint8Array(this.memory.buffer);
+  }
+
+  get PRIVATE_KEY_INPUT(): Uint8Array {
+    return new Uint8Array(
+      this.memory.buffer,
+      WASM_MEMORY_PRIVATE_KEY_OFFSET,
+      PRIVATE_KEY_SIZE
     );
-    this.PUBLIC_KEY_INPUT = this.WASM_BUFFER.subarray(
-      WASM_PUBLIC_KEY_INPUT_PTR,
-      WASM_PUBLIC_KEY_INPUT_PTR + validate.PUBLIC_KEY_UNCOMPRESSED_SIZE
+  }
+
+  get PUBLIC_KEY_INPUT(): Uint8Array {
+    return new Uint8Array(
+      this.memory.buffer,
+      WASM_MEMORY_PUBLIC_KEY_OFFSET,
+      PUBLIC_KEY_UNCOMPRESSED_SIZE
     );
-    this.PUBLIC_KEY_INPUT2 = this.WASM_BUFFER.subarray(
-      WASM_PUBLIC_KEY_INPUT_PTR2,
-      WASM_PUBLIC_KEY_INPUT_PTR2 + validate.PUBLIC_KEY_UNCOMPRESSED_SIZE
+  }
+
+  get PUBLIC_KEY_INPUT2(): Uint8Array {
+    return new Uint8Array(
+      this.memory.buffer,
+      WASM_MEMORY_PUBLIC_KEY2_OFFSET,
+      PUBLIC_KEY_UNCOMPRESSED_SIZE
     );
-    this.X_ONLY_PUBLIC_KEY_INPUT = this.WASM_BUFFER.subarray(
-      WASM_X_ONLY_PUBLIC_KEY_INPUT_PTR,
-      WASM_X_ONLY_PUBLIC_KEY_INPUT_PTR + validate.X_ONLY_PUBLIC_KEY_SIZE
+  }
+
+  get X_ONLY_PUBLIC_KEY_INPUT(): Uint8Array {
+    return new Uint8Array(
+      this.memory.buffer,
+      WASM_MEMORY_X_ONLY_PUBLIC_KEY_OFFSET,
+      X_ONLY_PUBLIC_KEY_SIZE
     );
-    this.X_ONLY_PUBLIC_KEY_INPUT2 = this.WASM_BUFFER.subarray(
-      WASM_X_ONLY_PUBLIC_KEY_INPUT2_PTR,
-      WASM_X_ONLY_PUBLIC_KEY_INPUT2_PTR + validate.X_ONLY_PUBLIC_KEY_SIZE
+  }
+
+  get X_ONLY_PUBLIC_KEY_INPUT2(): Uint8Array {
+    return new Uint8Array(
+      this.memory.buffer,
+      WASM_MEMORY_X_ONLY_PUBLIC_KEY2_OFFSET,
+      X_ONLY_PUBLIC_KEY_SIZE
     );
-    this.TWEAK_INPUT = this.WASM_BUFFER.subarray(
-      WASM_TWEAK_INPUT_PTR,
-      WASM_TWEAK_INPUT_PTR + validate.TWEAK_SIZE
+  }
+
+  get TWEAK_INPUT(): Uint8Array {
+    return new Uint8Array(
+      this.memory.buffer,
+      WASM_MEMORY_TWEAK_OFFSET,
+      TWEAK_SIZE
     );
-    this.HASH_INPUT = this.WASM_BUFFER.subarray(
-      WASM_HASH_INPUT_PTR,
-      WASM_HASH_INPUT_PTR + validate.HASH_SIZE
+  }
+
+  get HASH_INPUT(): Uint8Array {
+    return new Uint8Array(
+      this.memory.buffer,
+      WASM_MEMORY_HASH_OFFSET,
+      HASH_SIZE
     );
-    this.EXTRA_DATA_INPUT = this.WASM_BUFFER.subarray(
-      WASM_EXTRA_DATA_INPUT_PTR,
-      WASM_EXTRA_DATA_INPUT_PTR + validate.EXTRA_DATA_SIZE
+  }
+
+  get SIGNATURE_INPUT(): Uint8Array {
+    return new Uint8Array(
+      this.memory.buffer,
+      WASM_MEMORY_SIGNATURE_OFFSET,
+      SIGNATURE_SIZE
     );
-    this.SIGNATURE_INPUT = this.WASM_BUFFER.subarray(
-      WASM_SIGNATURE_INPUT_PTR,
-      WASM_SIGNATURE_INPUT_PTR + validate.SIGNATURE_SIZE
+  }
+
+  get EXTRA_DATA_INPUT(): Uint8Array {
+    return new Uint8Array(
+      this.memory.buffer,
+      WASM_MEMORY_EXTRA_DATA_OFFSET,
+      EXTRA_DATA_SIZE
     );
   }
 }

@@ -1,20 +1,17 @@
-function get4RandomBytes() {
-  const bytes = new Uint8Array(4);
-  if (typeof crypto === "undefined") {
-    throw new Error(
-      "The crypto object is unavailable. This may occur if your environment does not support the Web Cryptography API."
-    );
+export function getRandomValues(array: Uint8Array): void {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(array);
+  } else if (typeof require !== 'undefined') {
+    // Node.js
+    const { randomFillSync } = require('crypto');
+    randomFillSync(array);
+  } else {
+    throw new Error('No secure random number generator available');
   }
-  crypto.getRandomValues(bytes);
-  return bytes;
 }
 
-export function generateInt32(): number {
-  const array = get4RandomBytes();
-  return (
-    (array[0] << (3 * 8)) +
-    (array[1] << (2 * 8)) +
-    (array[2] << (1 * 8)) +
-    array[3]
-  );
+export function randomBytes(size: number): Uint8Array {
+  const array = new Uint8Array(size);
+  getRandomValues(array);
+  return array;
 }
