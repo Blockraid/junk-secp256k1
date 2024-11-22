@@ -1,115 +1,161 @@
-import * as validate_error from "./validate_error.js";
+import {
+  ERROR_BAD_PRIVATE,
+  ERROR_BAD_POINT,
+  ERROR_BAD_TWEAK,
+  throwError,
+  ERROR_BAD_HASH,
+  ERROR_BAD_EXTRA_DATA,
+  ERROR_BAD_SIGNATURE,
+  ERROR_BAD_PARITY,
+  ERROR_BAD_RECOVERY_ID,
+} from "./validate_error.js";
 
 export const PRIVATE_KEY_SIZE = 32;
-export const PUBLIC_KEY_UNCOMPRESSED_SIZE = 65;
 export const PUBLIC_KEY_COMPRESSED_SIZE = 33;
+export const PUBLIC_KEY_UNCOMPRESSED_SIZE = 65;
 export const X_ONLY_PUBLIC_KEY_SIZE = 32;
 export const TWEAK_SIZE = 32;
-export const SIGNATURE_SIZE = 64;
 export const HASH_SIZE = 32;
 export const EXTRA_DATA_SIZE = 32;
+export const SIGNATURE_SIZE = 64;
+
+const BN32_ZERO = new Uint8Array(32);
+const BN32_N = new Uint8Array([
+  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+  254, 186, 174, 220, 230, 175, 72, 160, 59, 191, 210, 94, 140, 208, 54, 65, 65,
+]);
+
+// Difference between field and order
+const BN32_P_MINUS_N = new Uint8Array([
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 69, 81, 35, 25, 80, 183, 95,
+  196, 64, 45, 161, 114, 47, 201, 186, 238,
+]);
+
+function isUint8Array(value: Uint8Array): boolean {
+  return value instanceof Uint8Array;
+}
+
+function cmpBN32(data1: Uint8Array, data2: Uint8Array): number {
+  for (let i = 0; i < 32; ++i) {
+    if (data1[i] !== data2[i]) {
+      return data1[i] < data2[i] ? -1 : 1;
+    }
+  }
+  return 0;
+}
+
+export function isZero(x: Uint8Array): boolean {
+  return cmpBN32(x, BN32_ZERO) === 0;
+}
+
+export function isPrivate(x: Uint8Array): boolean {
+  return (
+    isUint8Array(x) &&
+    x.length === PRIVATE_KEY_SIZE &&
+    cmpBN32(x, BN32_ZERO) > 0 &&
+    cmpBN32(x, BN32_N) < 0
+  );
+}
+
+export function isPoint(p: Uint8Array): boolean {
+  return (
+    isUint8Array(p) &&
+    (p.length === PUBLIC_KEY_COMPRESSED_SIZE ||
+      p.length === PUBLIC_KEY_UNCOMPRESSED_SIZE ||
+      p.length === X_ONLY_PUBLIC_KEY_SIZE)
+  );
+}
+
+export function isXOnlyPoint(p: Uint8Array): boolean {
+  return isUint8Array(p) && p.length === X_ONLY_PUBLIC_KEY_SIZE;
+}
 
 export function isDERPoint(p: Uint8Array): boolean {
   return (
-    p.length === PUBLIC_KEY_COMPRESSED_SIZE ||
-    p.length === PUBLIC_KEY_UNCOMPRESSED_SIZE
+    isUint8Array(p) &&
+    (p.length === PUBLIC_KEY_COMPRESSED_SIZE ||
+      p.length === PUBLIC_KEY_UNCOMPRESSED_SIZE)
   );
 }
 
 export function isPointCompressed(p: Uint8Array): boolean {
-  return p.length === PUBLIC_KEY_COMPRESSED_SIZE;
+  return isUint8Array(p) && p.length === PUBLIC_KEY_COMPRESSED_SIZE;
 }
 
-export function isXOnlyPoint(p: Uint8Array): boolean {
-  return p.length === X_ONLY_PUBLIC_KEY_SIZE;
+function isTweak(tweak: Uint8Array): boolean {
+  return (
+    isUint8Array(tweak) &&
+    tweak.length === TWEAK_SIZE &&
+    cmpBN32(tweak, BN32_N) < 0
+  );
 }
 
-export function isPrivate(d: Uint8Array): boolean {
-  return d.length === PRIVATE_KEY_SIZE;
+function isHash(h: Uint8Array): boolean {
+  return isUint8Array(h) && h.length === HASH_SIZE;
 }
 
-export function isSignature(s: Uint8Array): boolean {
-  return s.length === SIGNATURE_SIZE;
+function isExtraData(e?: Uint8Array): boolean {
+  return e === undefined || (isUint8Array(e) && e.length === EXTRA_DATA_SIZE);
 }
 
-export function isHash(h: Uint8Array): boolean {
-  return h.length === HASH_SIZE;
+function isSignature(signature: Uint8Array): boolean {
+  return (
+    isUint8Array(signature) &&
+    signature.length === 64 &&
+    cmpBN32(signature.subarray(0, 32), BN32_N) < 0 &&
+    cmpBN32(signature.subarray(32, 64), BN32_N) < 0
+  );
 }
 
-export function isTweak(t: Uint8Array): boolean {
-  return t.length === TWEAK_SIZE;
+function isSigrLessThanPMinusN(signature: Uint8Array): boolean {
+  return (
+    isUint8Array(signature) &&
+    signature.length === 64 &&
+    cmpBN32(signature.subarray(0, 32), BN32_P_MINUS_N) < 0
+  );
 }
 
-export function isExtraData(e: Uint8Array): boolean {
-  return e.length === EXTRA_DATA_SIZE;
-}
-
-export function isZero(t: Uint8Array): boolean {
-  for (let i = 0; i < t.length; i++) {
-    if (t[i] !== 0) return false;
-  }
-  return true;
+export function validateParity(p: 1 | 0): void {
+  if (p !== 0 && p !== 1) throwError(ERROR_BAD_PARITY);
 }
 
 export function validatePrivate(d: Uint8Array): void {
-  if (!isPrivate(d)) throw new validate_error.InvalidPrivateKeyError();
+  if (!isPrivate(d)) throwError(ERROR_BAD_PRIVATE);
 }
 
 export function validatePoint(p: Uint8Array): void {
-  if (!isDERPoint(p)) throw new validate_error.InvalidPublicKeyError();
+  if (!isPoint(p)) throwError(ERROR_BAD_POINT);
 }
 
 export function validateXOnlyPoint(p: Uint8Array): void {
-  if (!isXOnlyPoint(p)) throw new validate_error.InvalidPublicKeyError();
+  if (!isXOnlyPoint(p)) throwError(ERROR_BAD_POINT);
 }
 
-export function validateSignature(s: Uint8Array): void {
-  if (!isSignature(s)) throw new validate_error.InvalidSignatureError();
+export function validateTweak(tweak: Uint8Array): void {
+  if (!isTweak(tweak)) throwError(ERROR_BAD_TWEAK);
 }
 
 export function validateHash(h: Uint8Array): void {
-  if (!isHash(h)) throw new validate_error.InvalidHashError();
-}
-
-export function validateTweak(t: Uint8Array): void {
-  if (!isTweak(t)) throw new validate_error.InvalidTweakError();
+  if (!isHash(h)) throwError(ERROR_BAD_HASH);
 }
 
 export function validateExtraData(e?: Uint8Array): void {
-  if (e !== undefined && !isExtraData(e))
-    throw new validate_error.InvalidExtraDataError();
+  if (!isExtraData(e)) throwError(ERROR_BAD_EXTRA_DATA);
 }
 
-export function validateParity(p: number): void {
-  if (p !== 0 && p !== 1) throw new validate_error.InvalidParityError();
+export function validateSignature(signature: Uint8Array): void {
+  if (!isSignature(signature)) throwError(ERROR_BAD_SIGNATURE);
 }
 
-export function validateSignatureNonzeroRS(sig: Uint8Array): void {
-  validateSignatureCustom((): boolean => !isZero(sig.subarray(0, 32)));
-  validateSignatureCustom((): boolean => !isZero(sig.subarray(32, 64)));
+export function validateSignatureCustom(validatorFn: () => boolean): void {
+  if (!validatorFn()) throwError(ERROR_BAD_SIGNATURE);
 }
 
-export function validateSigrPMinusN(sig: Uint8Array): void {
-  validateSignatureCustom((): boolean => {
-    const r = sig.subarray(0, 32);
-    const rLen = r.length;
-    let carry = 0;
-    for (let i = 0; i < rLen; i++) {
-      carry = r[i] - SECP256K1_N[i] - carry;
-      if (carry < 0) return true;
-      if (carry > 0) return false;
-    }
-    return false;
-  });
+export function validateSignatureNonzeroRS(signature: Uint8Array): void {
+  if (isZero(signature.subarray(0, 32))) throwError(ERROR_BAD_SIGNATURE);
+  if (isZero(signature.subarray(32, 64))) throwError(ERROR_BAD_SIGNATURE);
 }
 
-export function validateSignatureCustom(fn: () => boolean): void {
-  if (!fn()) throw new validate_error.InvalidSignatureError();
+export function validateSigrPMinusN(signature: Uint8Array): void {
+  if (!isSigrLessThanPMinusN(signature)) throwError(ERROR_BAD_RECOVERY_ID);
 }
-
-const SECP256K1_N = new Uint8Array([
-  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe,
-  0xba, 0xae, 0xdc, 0xe6, 0xaf, 0x48, 0xa0, 0x3b,
-  0xbf, 0xd2, 0x5e, 0x8c, 0xd0, 0x36, 0x41, 0x41,
-]);

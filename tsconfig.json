@@ -1,16 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["esnext", "node"],  // Ensure that "dom" is not included
-    "module": "commonjs",
+    "target": "ES2015",
+    "module": "NodeNext",
     "declaration": true,
     "outDir": "./lib",
-    "strict": true,
+    "baseUrl": "./src_ts",
+    "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "rootDir": "./src_ts"
-  },
-  "include": ["src_ts/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts"]
+    "moduleResolution": "NodeNext"
+  }
 }
