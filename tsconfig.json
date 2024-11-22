@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
+    "lib": ["esnext", "node"],  // Ensure that "dom" is not included
     "module": "commonjs",
     "declaration": true,
     "outDir": "./lib",
